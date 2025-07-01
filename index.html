@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Saketh Foods - Tiger Delivery</title>
+
+  <!-- Firebase — Modular SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyB3YNpB2recxW2MmX13hPgi3GkSiuCvmvE",
+      authDomain: "saketh-foods-fe7ee.firebaseapp.com",
+      databaseURL: "https://saketh-foods-fe7ee-default-rtdb.firebaseio.com",
+      projectId: "saketh-foods-fe7ee",
+      storageBucket: "saketh-foods-fe7ee.appspot.com",
+      messagingSenderId: "267306342223",
+      appId: "1:267306342223:web:7d3260d065a7a6609f573a",
+      measurementId: "G-PRDEX3WRK8"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+
+    window.saveOrder = order => {
+      const newRef = push(ref(database, "orders"));
+      return set(newRef, order);
+    };
+  </script>
+
+  <style>
+    body {
+      font-family: 'Comic Sans MS', cursive, sans-serif;
+      background-color: #ffebf3;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background: linear-gradient(45deg, #ff6600, #ffcc00);
+      padding: 20px;
+      text-align: center;
+    }
+    .logo {
+      font-size: 3em;
+      font-weight: bold;
+      color: white;
+      text-shadow: 2px 2px 0 #000;
+    }
+    .tagline {
+      font-size: 1.2em;
+      color: white;
+      text-shadow: 1px 1px 0 #000;
+    }
+    #search-bar {
+      padding: 10px;
+      text-align: center;
+      background: #fff;
+    }
+    #search-bar input {
+      width: 80%;
+      padding: 10px;
+      font-size: 1em;
+      border: 2px dashed orange;
+      border-radius: 10px;
+    }
+    .restaurant {
+      background-color: white;
+      border: 3px dotted orange;
+      border-radius: 20px;
+      margin: 20px;
+      padding: 15px;
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .restaurant img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+      border: 3px solid yellow;
+    }
+    .restaurant-info {
+      margin-left: 20px;
+      flex: 1;
+    }
+    .menu-item {
+      background-color: #fffacd;
+      padding: 10px;
+      margin: 5px;
+      border-left: 5px solid #ffa500;
+      cursor: pointer;
+    }
+    .menu-item:hover {
+      background: #ffe;
+    }
+    .cart {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: white;
+      padding: 10px;
+      border: 3px dashed #ff6600;
+      border-radius: 10px;
+      width: 260px;
+      z-index: 10;
+    }
+    .order-btn {
+      background-color: #ff6600;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 50px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .order-btn:hover {
+      background-color: #cc5500;
+    }
+    .rating-bar select {
+      margin-top: 5px;
+    }
+    #address-bar {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      background: #fff;
+      border-top: 3px solid #ff6600;
+      padding: 10px;
+      text-align: center;
+    }
+    #address-bar input {
+      width: 60%;
+      padding: 10px;
+      border: 2px solid #ffa500;
+      border-radius: 10px;
+    }
+    #address-bar button {
+      padding: 10px;
+      border-radius: 10px;
+      background: orange;
+      color: white;
+      border: none;
+      margin-left: 10px;
+    }
+    .track-order {
+      text-align: center;
+      padding: 20px;
+      background: #fff;
+      display: none;
+    }
+    .track-order button {
+      background: green;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 10px;
+      border: none;
+    }
+    @keyframes tigerRun {
+      0% { left: -100px; }
+      100% { left: 100%; }
+    }
+    #tiger-animation {
+      position: fixed;
+      bottom: 60px;
+      left: -100px;
+      font-size: 2em;
+      animation: tigerRun 8s linear infinite;
+      display: none;
+      z-index: 9;
+    }
+    #progress-bar {
+      width: 80%;
+      background: #ddd;
+      margin: 20px auto;
+      border-radius: 20px;
+      overflow: hidden;
+      display: none;
+    }
+    #progress-fill {
+      height: 20px;
+      width: 0%;
+      background: linear-gradient(to right, #ff6600, #ffa500);
+      animation: progressFill 20s linear forwards;
+    }
+    @keyframes progressFill {
+      0% { width: 0%; }
+      100% { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo">🐅 Saketh Foods</div>
+    <div class="tagline">Fast, Fierce & Fresh like a Tiger!</div>
+  </header>
+
+  <div id="search-bar">
+    <input type="text" id="searchInput" placeholder="Search for restaurants or food..." onkeyup="searchRestaurants()">
+  </div>
+
+  <main id="restaurants-container"></main>
+
+  <div class="cart" id="cartBox"></div>
+
+  <div class="track-order" id="trackBox">
+    <h3>🐾 Track Your Order</h3>
+    <button onclick="startTracking()">Track Now</button>
+  </div>
+
+  <div id="tiger-animation">🐅</div>
+
+  <div id="progress-bar">
+    <div id="progress-fill"></div>
+  </div>
+
+  <div id="address-bar">
+    <input type="text" id="addressInput" placeholder="Enter your delivery address...">
+    <button onclick="saveAddress()">Save</button>
+  </div>
+
+  <script>
+    const restaurants = [
+      {
+        name: "Tiger Biryani Point",
+        rating: 4.6,
+        reviews: "1,234 roars",
+        description: "🍛 Spicy biryani from the jungle king!",
+        image: "https://via.placeholder.com/150/ffa07a",
+        menu: [
+          { name: "🐯 Wild Chicken Biryani", description: "Spicy & fierce", price: 220 },
+          { name: "🐅 Jungle Veg Biryani", description: "Green and bold", price: 180 }
+        ]
+      },
+      {
+        name: "Tiger Tandoori Express",
+        rating: 4.3,
+        reviews: "932 stripes",
+        description: "🔥 Grilled to tiger perfection!",
+        image: "https://via.placeholder.com/150/f4a460",
+        menu: [
+          { name: "🐅 Tiger Tikka", description: "Roar with flavor!", price: 250 },
+          { name: "🐯 Paneer Claws", description: "Creamy tiger paw bites", price: 200 }
+        ]
+      }
+    ];
+
+    let cart = [];
+
+    function displayRestaurants(list = restaurants) {
+      const container = document.getElementById("restaurants-container");
+      container.innerHTML = "";
+      list.forEach(r => {
+        const el = document.createElement("div");
+        el.className = "restaurant";
+        el.innerHTML = `
+          <img src="${r.image}" alt="${r.name}">
+          <div class="restaurant-info">
+            <h2>${r.name}</h2>
+            <p>⭐ ${r.rating} (${r.reviews})</p>
+            <p>${r.description}</p>
+            <div class="rating-bar">Rate: 
+              <select onchange="alert('Thanks for rating!')">
+                <option value="">--</option>
+                <option>⭐</option>
+                <option>⭐⭐</option>
+                <option>⭐⭐⭐</option>
+                <option>⭐⭐⭐⭐</option>
+                <option>⭐⭐⭐⭐⭐</option>
+              </select>
+            </div>
+            ${r.menu.map((item, index) => `
+              <div class="menu-item">
+                <h3>${item.name}</h3>
+                <p>${item.description}</p>
+                <p>₹${item.price}</p>
+                <button onclick="addToCart('${item.name}', ${item.price})">Add</button>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    function addToCart(itemName, price) {
+      cart.push({ itemName, price });
+      updateCart();
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCart();
+    }
+
+    function updateCart() {
+      const cartEl = document.getElementById('cartBox');
+      if (cart.length === 0) {
+        cartEl.innerHTML = "<p>Your cart is empty</p>";
+        return;
+      }
+      let html = "<h3>🛒 Tiger Cart</h3><ul>";
+      cart.forEach((item, i) => {
+        html += `<li>${item.itemName} - ₹${item.price} <button onclick="removeFromCart(${i})">❌</button></li>`;
+      });
+      html += "</ul>";
+      html += `<p><strong>Total:</strong> ₹${cart.reduce((a, b) => a + b.price, 0)}</p>`;
+      html += `
+        <label><input type="radio" name="pay" value="now" checked> Pay Now</label><br>
+        <label><input type="radio" name="pay" value="later"> Pay on Delivery</label><br>
+        <button class="order-btn" onclick="placeOrder()">Place Order 🐅</button>
+      `;
+      cartEl.innerHTML = html;
+    }
+
+    function placeOrder() {
+      const address = localStorage.getItem("tigerAddress") || "";
+      if (!address) {
+        alert("Please save your address first!");
+        return;
+      }
+      if (cart.length === 0) {
+        alert("Your cart is empty!");
+        return;
+      }
+
+      const payMode = document.querySelector('input[name="pay"]:checked').value;
+
+      const orderObj = {
+        address,
+        items: [...cart],
+        payment: payMode,
+        placed: Date.now(),
+        status: "Preparing"
+      };
+
+      saveOrder(orderObj)
+        .then(() => {
+          console.log("✅ Order saved to Firebase");
+          alert(`Order placed to ${address}
+Payment: ${payMode === 'now' ? 'Pay Now' : 'Pay on Delivery'}
+Items: ${cart.length}
+Estimated delivery: 15–30 minutes 🕒`);
+        })
+        .catch(err => {
+          console.error("❌ Firebase error:", err);
+          alert("Something went wrong saving your order.");
+        });
+
+      cart = [];
+      updateCart();
+      document.getElementById("trackBox").style.display = "block";
+    }
+
+    function saveAddress() {
+      const address = document.getElementById("addressInput").value;
+      if (!address.trim()) {
+        alert("Please enter a valid address!");
+        return;
+      }
+      localStorage.setItem("tigerAddress", address);
+      alert("Address saved!");
+    }
+
+    function searchRestaurants() {
+      const keyword = document.getElementById("searchInput").value.toLowerCase();
+      const filtered = restaurants.filter(r =>
+        r.name.toLowerCase().includes(keyword) ||
+        r.menu.some(m => m.name.toLowerCase().includes(keyword))
+      );
+      displayRestaurants(filtered);
+    }
+
+    function startTracking() {
+      const tiger = document.getElementById("tiger-animation");
+      const progress = document.getElementById("progress-bar");
+
+      tiger.style.display = "block";
+      progress.style.display = "block";
+      document.getElementById("progress-fill").style.animation = "progressFill 20s linear forwards";
+
+      let timeLeft = 20;
+      const interval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          alert("🚪 Your tiger has arrived at the door!");
+          tiger.style.display = "none";
+          progress.style.display = "none";
+        }
+      }, 1000);
+    }
+
+    window.onload = function () {
+      displayRestaurants();
+      const saved = localStorage.getItem("tigerAddress");
+      if (saved) document.getElementById("addressInput").value = saved;
+    };
+  </script>
+</<script type="module">
+  // Import the functions you need from the SDKs you need
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
+  // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyB3YNpB2recxW2MmX13hPgi3GkSiuCvmvE",
+    authDomain: "saketh-foods-fe7ee.firebaseapp.com",
+    databaseURL: "https://saketh-foods-fe7ee-default-rtdb.firebaseio.com",
+    projectId: "saketh-foods-fe7ee",
+    storageBucket: "saketh-foods-fe7ee.firebasestorage.app",
+    messagingSenderId: "267306342223",
+    appId: "1:267306342223:web:e73d871ad578e5a59f573a",
+    measurementId: "G-RJ89X1MC4D"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+</script>>
+</html>
